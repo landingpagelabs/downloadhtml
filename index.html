@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Download HTML — View Source Code of Any Website</title>
+  <meta name="description" content="Paste any URL to view, copy, and download its full HTML source code with syntax highlighting, meta tag extraction, and asset listing.">
+  <meta name="keywords" content="view source, download html, html source code, view page source, website source code">
+  <link rel="canonical" href="https://downloadhtml.com">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Download HTML — View Source Code of Any Website">
+  <meta property="og:description" content="Paste any URL to view, copy, and download its full HTML source code with syntax highlighting and metadata extraction.">
+  <meta property="og:url" content="https://downloadhtml.com">
+  <meta property="og:site_name" content="Download HTML">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Download HTML — View Source Code of Any Website">
+  <meta name="twitter:description" content="Paste any URL to view, copy, and download its full HTML source code with syntax highlighting and metadata extraction.">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <!-- Prism.js - One Dark theme -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+
+  <link rel="stylesheet" href="/style.css">
+
+  <!-- JSON-LD -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Download HTML",
+    "url": "https://downloadhtml.com",
+    "description": "View, copy, and download the HTML source code of any webpage with syntax highlighting, meta tag extraction, and asset listing.",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Any",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div class="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-top">
+        <h1 class="logo">&lt;/&gt; Download HTML</h1>
+        <p class="tagline">View, copy, and download the HTML source code of any webpage</p>
+      </div>
+      <form class="url-bar" id="urlForm">
+        <div class="url-input-wrap">
+          <span class="url-prefix">https://</span>
+          <input
+            type="text"
+            id="urlInput"
+            class="url-input"
+            placeholder="example.com"
+            spellcheck="false"
+            autocomplete="off"
+            autofocus
+          >
+        </div>
+        <button type="submit" class="btn btn-primary" id="fetchBtn">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M14 8L2 8M14 8L9 3M14 8L9 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>Fetch</span>
+        </button>
+      </form>
+      <div class="loading-bar" id="loadingBar"></div>
+    </header>
+
+    <!-- Error message -->
+    <div class="error-msg" id="errorMsg"></div>
+
+    <!-- Results -->
+    <main class="results" id="results">
+      <!-- Toolbar -->
+      <div class="toolbar" id="toolbar">
+        <div class="toolbar-left">
+          <span class="toolbar-label" id="toolbarLabel"></span>
+        </div>
+        <div class="toolbar-right">
+          <button class="btn btn-sm" id="copyBtn" title="Copy HTML">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="5" y="5" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M11 5V3.5A1.5 1.5 0 009.5 2h-6A1.5 1.5 0 002 3.5v6A1.5 1.5 0 003.5 11H5" stroke="currentColor" stroke-width="1.5"/></svg>
+            <span>Copy</span>
+          </button>
+          <button class="btn btn-sm" id="downloadBtn" title="Download HTML file">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 2v8m0 0L5 7m3 3l3-3M2 12v1.5A1.5 1.5 0 003.5 15h9a1.5 1.5 0 001.5-1.5V12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Download</span>
+          </button>
+          <div class="toolbar-divider"></div>
+          <button class="btn btn-sm" id="prettyBtn" title="Pretty Print">Pretty</button>
+          <button class="btn btn-sm" id="minifyBtn" title="Minify">Minify</button>
+          <div class="toolbar-divider"></div>
+          <button class="btn btn-sm" id="wrapBtn" title="Toggle word wrap">Wrap</button>
+        </div>
+      </div>
+
+      <!-- Code viewer -->
+      <div class="code-viewer" id="codeViewer">
+        <pre class="line-numbers"><code class="language-html" id="codeBlock"></code></pre>
+      </div>
+
+      <!-- Panels -->
+      <div class="panels">
+        <!-- Request Info -->
+        <div class="panel" id="requestPanel">
+          <button class="panel-header" data-panel="requestBody">
+            <span>Request Info</span>
+            <svg class="panel-chevron" width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="panel-body" id="requestBody"></div>
+        </div>
+
+        <!-- Meta Tags -->
+        <div class="panel" id="metaPanel">
+          <button class="panel-header" data-panel="metaBody">
+            <span>Meta Tags</span>
+            <svg class="panel-chevron" width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="panel-body" id="metaBody"></div>
+        </div>
+
+        <!-- Response Headers -->
+        <div class="panel" id="headersPanel">
+          <button class="panel-header" data-panel="headersBody">
+            <span>Response Headers</span>
+            <svg class="panel-chevron" width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="panel-body" id="headersBody"></div>
+        </div>
+
+        <!-- Asset List -->
+        <div class="panel" id="assetPanel">
+          <button class="panel-header" data-panel="assetBody">
+            <span>Assets</span>
+            <svg class="panel-chevron" width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="panel-body" id="assetBody"></div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Empty state -->
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">&lt;/&gt;</div>
+      <p>Enter a URL above to view its source code</p>
+    </div>
+
+    <!-- FAQ -->
+    <section class="faq" id="faq">
+      <h2>FAQ</h2>
+      <details>
+        <summary>What is HTML source code?</summary>
+        <p>HTML (HyperText Markup Language) is the code that makes up every webpage. When you visit a website, your browser downloads the HTML and renders it visually. This tool lets you see that raw code before the browser interprets it.</p>
+      </details>
+      <details>
+        <summary>Why would I want to view a page's source code?</summary>
+        <p>Developers inspect source code to debug issues, learn how a site is built, check SEO tags, audit performance, or extract specific information like meta tags and asset URLs. It's also useful for competitive research and accessibility audits.</p>
+      </details>
+      <details>
+        <summary>How does this work?</summary>
+        <p>When you enter a URL, our server fetches the page's HTML on your behalf and returns it with syntax highlighting. This server-side approach avoids browser security restrictions that would normally prevent reading another site's code directly.</p>
+      </details>
+      <details>
+        <summary>Is this the same as "View Source" in my browser?</summary>
+        <p>Similar, but with extras: syntax highlighting, line numbers, meta tag extraction, asset listing, and the ability to download the HTML as a file. It also works on mobile where browser "View Source" isn't available.</p>
+      </details>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>Built by <a href="https://www.landingpagelabs.co" target="_blank" rel="noopener">Landing Page Labs</a></p>
+    </footer>
+  </div>
+
+  <!-- Prism.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markup.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet">
+
+  <script src="/app.js"></script>
+</body>
+</html>
