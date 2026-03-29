@@ -68,6 +68,7 @@ function fetchPage(targetURL) {
         'Accept': 'text/html,application/xhtml+xml,*/*',
       },
       timeout: FETCH_TIMEOUT,
+      rejectUnauthorized: false,
     }, (response) => {
       // Follow redirects (up to 5)
       if ([301, 302, 303, 307, 308].includes(response.statusCode) && response.headers.location) {
@@ -170,6 +171,6 @@ export default async function handler(req, res) {
         ? 'Connection refused by the target server.'
         : 'Failed to fetch the URL. Make sure it\'s accessible and try again.';
 
-    return res.status(502).json({ error: message, debug: { name: err.name, code: err.code, msg: err.message } });
+    return res.status(502).json({ error: message });
   }
 }
