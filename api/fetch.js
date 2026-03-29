@@ -170,6 +170,6 @@ export default async function handler(req, res) {
         ? 'Connection refused by the target server.'
         : 'Failed to fetch the URL. Make sure it\'s accessible and try again.';
 
-    return res.status(502).json({ error: message });
+    return res.status(502).json({ error: message, debug: { name: err.name, code: err.code, msg: err.message } });
   }
 }
