@@ -1,3 +1,6 @@
+import https from 'https';
+import http from 'http';
+
 const rateLimit = new Map();
 
 const RATE_LIMIT_WINDOW = 60 * 1000;
@@ -53,6 +56,72 @@ function isValidURL(urlString) {
   }
 }
 
+function fetchPage(targetURL) {
+  return new Promise((resolve, reject) => {
+    const parsedURL = new URL(targetURL);
+    const client = parsedURL.protocol === 'https:' ? https : http;
+    const startTime = Date.now();
+
+    const request = client.get(targetURL, {
+      headers: {
+        'User-Agent': 'DownloadHTML Bot/1.0 (+https://downloadhtml.com)',
+        'Accept': 'text/html,application/xhtml+xml,*/*',
+      },
+      timeout: FETCH_TIMEOUT,
+    }, (response) => {
+      // Follow redirects (up to 5)
+      if ([301, 302, 303, 307, 308].includes(response.statusCode) && response.headers.location) {
+        const redirectURL = new URL(response.headers.location, targetURL).href;
+        if (!isValidURL(redirectURL)) {
+          return reject(new Error('Redirect to invalid URL'));
+        }
+        return fetchPage(redirectURL).then(resolve).catch(reject);
+      }
+
+      const chunks = [];
+      let totalSize = 0;
+
+      response.on('data', (chunk) => {
+        totalSize += chunk.length;
+        if (totalSize > MAX_RESPONSE_SIZE) {
+          request.destroy();
+          reject(new Error('RESPONSE_TOO_LARGE'));
+        }
+        chunks.push(chunk);
+      });
+
+      response.on('end', () => {
+        const buffer = Buffer.concat(chunks);
+        const fetchTime = Date.now() - startTime;
+        const headers = {};
+        const rawHeaders = response.rawHeaders;
+        for (let i = 0; i < rawHeaders.length; i += 2) {
+          headers[rawHeaders[i].toLowerCase()] = rawHeaders[i + 1];
+        }
+
+        resolve({
+          html: buffer.toString('utf-8'),
+          status: response.statusCode,
+          statusText: response.statusMessage,
+          headers,
+          size: buffer.length,
+          fetchTime,
+          url: targetURL,
+        });
+      });
+
+      response.on('error', reject);
+    });
+
+    request.on('timeout', () => {
+      request.destroy();
+      reject(new Error('TIMEOUT'));
+    });
+
+    request.on('error', reject);
+  });
+}
+
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -83,54 +152,16 @@ export default async function handler(req, res) {
   }
 
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
-
-    const startTime = Date.now();
-
-    const response = await fetch(targetURL, {
-      signal: controller.signal,
-      headers: {
-        'User-Agent': 'DownloadHTML Bot/1.0 (+https://downloadhtml.com)',
-        'Accept': 'text/html,application/xhtml+xml,*/*',
-      },
-      redirect: 'follow',
-    });
-
-    clearTimeout(timeout);
-
-    const contentLength = response.headers.get('content-length');
-    if (contentLength && parseInt(contentLength) > MAX_RESPONSE_SIZE) {
-      return res.status(413).json({ error: 'Response too large. Maximum size is 5MB.' });
-    }
-
-    const buffer = await response.arrayBuffer();
-    const fetchTime = Date.now() - startTime;
-
-    if (buffer.byteLength > MAX_RESPONSE_SIZE) {
-      return res.status(413).json({ error: 'Response too large. Maximum size is 5MB.' });
-    }
-
-    const html = new TextDecoder('utf-8', { fatal: false }).decode(buffer);
-
-    const headers = {};
-    response.headers.forEach((value, key) => {
-      headers[key] = value;
-    });
-
-    return res.status(200).json({
-      html,
-      status: response.status,
-      statusText: response.statusText,
-      headers,
-      size: buffer.byteLength,
-      fetchTime,
-      url: response.url,
-    });
+    const data = await fetchPage(targetURL);
+    return res.status(200).json(data);
 
   } catch (err) {
-    if (err.name === 'AbortError') {
+    if (err.message === 'TIMEOUT') {
       return res.status(504).json({ error: 'Request timed out after 10 seconds.' });
+    }
+
+    if (err.message === 'RESPONSE_TOO_LARGE') {
+      return res.status(413).json({ error: 'Response too large. Maximum size is 5MB.' });
     }
 
     const message = err.code === 'ENOTFOUND'
@@ -139,6 +170,6 @@ export default async function handler(req, res) {
         ? 'Connection refused by the target server.'
         : 'Failed to fetch the URL. Make sure it\'s accessible and try again.';
 
-    return res.status(502).json({ error: message, debug: { name: err.name, code: err.code, msg: err.message } });
+    return res.status(502).json({ error: message });
   }
 }
